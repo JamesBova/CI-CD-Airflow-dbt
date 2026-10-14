@@ -29,7 +29,22 @@ jobs:
       - name: Start warehouse
         working-directory: airflow
         run: docker compose up -d warehouse
-
+      - name: Create dbt profile for CI
+        run: |
+          cat > airflow/dbt_profiles/profiles.yml <<'EOF'
+          ci_cd_dbt:
+            target: dev
+            outputs:
+              dev:
+                type: postgres
+                host: warehouse
+                port: 5432
+                user: dbt
+                password: dbt
+                dbname: ci_cd_dbt
+                schema: public
+                threads: 2
+          EOF
       - name: Run dbt build
         working-directory: airflow
         run: |
