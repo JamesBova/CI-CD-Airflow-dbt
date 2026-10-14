@@ -15,17 +15,17 @@ def test_no_import_errors():
 
 
 def test_dag_loaded():
-    dag = dag_bag.get_dag("dbt_ci_cd_pipeline")
+    dag = dag_bag.dags.get("dbt_ci_cd_pipeline")
     assert dag is not None
 
 
 def test_task_count():
-    dag = dag_bag.get_dag("dbt_ci_cd_pipeline")
+    dag = dag_bag.dags["dbt_ci_cd_pipeline"]
     assert len(dag.tasks) == 3
 
 
 def test_task_dependencies():
-    dag = dag_bag.get_dag("dbt_ci_cd_pipeline")
+    dag = dag_bag.dags["dbt_ci_cd_pipeline"]
 
     assert dag.get_task("dbt_debug").downstream_task_ids == {"dbt_test"}
     assert dag.get_task("dbt_test").downstream_task_ids == {"dbt_run"}
