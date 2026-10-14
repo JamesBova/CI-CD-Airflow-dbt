@@ -26,3 +26,12 @@ jobs:
         run: |
           docker compose run --rm --entrypoint pytest \
             airflow-scheduler -v /opt/airflow/tests
+      - name: Start warehouse
+        working-directory: airflow
+        run: docker compose up -d warehouse
+
+      - name: Run dbt build
+        working-directory: airflow
+        run: |
+          docker compose run --rm --entrypoint bash \
+            airflow-scheduler -c "cd /opt/dbt/dbt_project && dbt build"
