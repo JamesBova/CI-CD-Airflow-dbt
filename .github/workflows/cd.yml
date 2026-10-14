@@ -7,12 +7,13 @@ on:
       - completed
 
 jobs:
-  deploy:
+  deploy-dev:
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'master'
 
     runs-on: self-hosted
+    environment: DEV
 
     steps:
       - name: Checkout tested commit
@@ -20,10 +21,35 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Deploy
+      - name: Deploy to DEV
         shell: powershell
         run: |
-          $dest = "C:\Deploy\CI-CD-Airflow-dbt"
+          $dest = "C:\Deploy\CI-CD-Airflow-dbt\Dev"
+
+          Remove-Item "$dest\*" -Recurse -Force -ErrorAction SilentlyContinue
+
+          New-Item -ItemType Directory -Force "$dest\airflow\dags" | Out-Null
+          New-Item -ItemType Directory -Force "$dest\dbt_project" | Out-Null
+
+          Copy-Item "airflow\dags\*" "$dest\airflow\dags" -Recurse -Force
+          Copy-Item "dbt_project\*" "$dest\dbt_project" -Recurse -Force
+
+  deploy-uat:
+    needs: deploy-dev
+
+    runs-on: self-hosted
+    environment: UAT
+
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Deploy to UAT
+        shell: powershell
+        run: |
+          $dest = "C:\Deploy\CI-CD-Airflow-dbt\UAT"
 
           Remove-Item "$dest\*" -Recurse -Force -ErrorAction SilentlyContinue
 
