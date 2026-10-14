@@ -45,17 +45,22 @@ jobs:
                 schema: public
                 threads: 2
           EOF
-      - name: Debug dbt CI
+      - name: Debug dbt container
         working-directory: airflow
         run: |
-          echo "=== Profile ==="
-          cat dbt_profiles/profiles.yml
+          docker compose run --rm --entrypoint bash airflow-scheduler -lc '
+            set -x
+            echo "=== dbt version ==="
+            dbt --version
 
-          echo "=== Containers ==="
-          docker compose ps
+            echo "=== dbt project ==="
+            ls -la /opt/dbt/dbt_project
 
-          echo "=== dbt debug ==="
-          docker compose run --rm --entrypoint bash airflow-scheduler -c "cd /opt/dbt/dbt_project && dbt debug"
+            echo "=== dbt profile ==="
+            ls -la /home/airflow/.dbt
+            cat /home/airflow/.dbt/profiles.yml
 
-          echo "=== dbt build ==="
-          docker compose run --rm --entrypoint bash airflow-scheduler -c "cd /opt/dbt/dbt_project && dbt build"
+            echo "=== dbt debug ==="
+            cd /opt/dbt/dbt_project
+            dbt debug
+          '
