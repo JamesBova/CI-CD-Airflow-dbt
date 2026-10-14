@@ -1,0 +1,85 @@
+services:
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres:/var/lib/postgresql/data
+  
+  warehouse:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: dbt
+      POSTGRES_PASSWORD: dbt
+      POSTGRES_DB: ci_cd_dbt
+    volumes:
+      - dbt_postgres:/var/lib/postgresql/data
+
+  airflow-init:
+    build: .
+    depends_on:
+      - postgres
+    environment: &airflow-common-env
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+      AIRFLOW__API_AUTH__JWT_SECRET: airflow_jwt_secret
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ../tests:/opt/airflow/tests
+      - ./logs:/opt/airflow/logs
+      - ../dbt_project:/opt/dbt/dbt_project
+      - ./dbt_profiles:/home/airflow/.dbt
+    command: db migrate
+
+  airflow-apiserver:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      <<: *airflow-common-env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ../tests:/opt/airflow/tests
+      - ./logs:/opt/airflow/logs
+      - ../dbt_project:/opt/dbt/dbt_project
+      - ./dbt_profiles:/home/airflow/.dbt
+    ports:
+      - "8083:8080"
+    command: api-server
+
+  airflow-scheduler:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      <<: *airflow-common-env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ../tests:/opt/airflow/tests
+      - ./logs:/opt/airflow/logs
+      - ../dbt_project:/opt/dbt/dbt_project
+      - ./dbt_profiles:/home/airflow/.dbt
+    command: scheduler
+
+  airflow-dag-processor:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      <<: *airflow-common-env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ../tests:/opt/airflow/tests
+      - ./logs:/opt/airflow/logs
+      - ../dbt_project:/opt/dbt/dbt_project
+      - ./dbt_profiles:/home/airflow/.dbt
+    command: dag-processor
+
+
+volumes:
+  airflow_postgres:
+  dbt_postgres:

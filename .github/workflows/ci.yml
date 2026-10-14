@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create runtime directories
+        run: |
+          mkdir -p airflow/logs
+          mkdir -p airflow/dbt_profiles
+
+      - name: Build Airflow image
+        working-directory: airflow
+        run: docker compose build
+
+      - name: Run DAG tests
+        working-directory: airflow
+        run: |
+          docker compose run --rm --entrypoint pytest \
+            airflow-scheduler -v /opt/airflow/tests
