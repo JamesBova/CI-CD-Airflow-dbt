@@ -45,6 +45,10 @@ jobs:
                 schema: public
                 threads: 2
           EOF
+      - name: Make dbt directories writable
+        run: |
+          chmod -R a+rwX dbt_project
+          chmod -R a+rwX airflow/dbt_profiles
       - name: Debug dbt container
         working-directory: airflow
         run: |
