@@ -49,22 +49,8 @@ jobs:
         run: |
           chmod -R a+rwX dbt_project
           chmod -R a+rwX airflow/dbt_profiles
-      - name: Debug dbt container
+      - name: Run dbt build
         working-directory: airflow
         run: |
-          docker compose run --rm --entrypoint bash airflow-scheduler -lc '
-            set -x
-            echo "=== dbt version ==="
-            dbt --version
-
-            echo "=== dbt project ==="
-            ls -la /opt/dbt/dbt_project
-
-            echo "=== dbt profile ==="
-            ls -la /home/airflow/.dbt
-            cat /home/airflow/.dbt/profiles.yml
-
-            echo "=== dbt debug ==="
-            cd /opt/dbt/dbt_project
-            dbt debug
-          '
+          docker compose run --rm --entrypoint bash \
+            airflow-scheduler -c "cd /opt/dbt/dbt_project && dbt build"
